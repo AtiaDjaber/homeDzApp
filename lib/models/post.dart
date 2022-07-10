@@ -77,7 +77,9 @@ class Post {
         createdAt: json["created_at"] == null
             ? null
             : DateTime.parse(json["created_at"]),
-        updatedAt: json["updated_at"],
+        updatedAt: json["updated_at"] == null
+            ? null
+            : DateTime.parse(json["updated_at"]),
         location: json["location"] == null
             ? null
             : Location.fromJson(json["location"]),
@@ -93,6 +95,7 @@ class Post {
   Map<String, dynamic> toJson() => {
         "id": id == null ? null : id,
         "title": title == null ? null : title,
+        "photo": photo == null ? null : photo,
         "status": status == null ? null : status,
         "description": description,
         "address": address == null ? null : address,

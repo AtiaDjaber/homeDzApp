@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:home_dz/models/category.dart';
 import 'package:home_dz/models/post.dart';
+import 'package:home_dz/models/filter.dart';
 import 'package:home_dz/models/section.dart';
 
 import '../config.dart';
@@ -12,7 +13,7 @@ class HomeController extends GetxController {
   List<Section> listSections = [];
   var loading_categories = true;
   var loading_posts = true;
-
+  Filter postFilter = Filter();
   bool secend_loading_post = false;
 
   @override
@@ -34,6 +35,7 @@ class HomeController extends GetxController {
       if (response.statusCode == 200) {
         listCategories =
             (response.data as List).map((x) => Category.fromJson(x)).toList();
+        listCategories.insert(0, Category(name: "الكل", id: null));
         loading_categories = true;
         update();
       }
@@ -48,7 +50,8 @@ class HomeController extends GetxController {
       var dioRequest = Dio();
       dioRequest.options.headers['content-Type'] = 'application/json';
       // dioRequest.options.headers["authorization"] = helperService.token;
-      final response = await dioRequest.get(Config.baseServerUrl + '/posts');
+      final response = await dioRequest.post(Config.baseServerUrl + '/posts',
+          data: postFilter.toJson());
       if (response.statusCode == 200) {
         lisPosts = (response.data["data"] as List)
             .map((x) => Post.fromJson(x))
@@ -63,12 +66,20 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
-    // TODO: implement onClose
     super.onClose();
   }
 
-  void selectCategorie(int index) {
-    listSections = listCategories[index].sections ?? [];
+  void selectCategorie(int indexCategory) {
+    postFilter.categoryId = listCategories[indexCategory].id;
+    postFilter.sectionId = null;
+    listSections = listCategories[indexCategory].sections ?? [];
     update();
+    getPosts();
+  }
+
+  void selectSection(int indexSection) {
+    postFilter.sectionId = listSections[indexSection].id;
+    update();
+    getPosts();
   }
 }

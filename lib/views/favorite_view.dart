@@ -7,74 +7,27 @@ import 'package:home_dz/models/post.dart';
 import 'package:home_dz/models/section.dart';
 import 'package:home_dz/service/HelperService.dart';
 import 'package:home_dz/views/detail_view.dart';
-import 'package:home_dz/views/favorite_view.dart';
 import 'package:shimmer/shimmer.dart';
-
-import 'AddPostView.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class HomeView extends StatelessWidget {
-  final controller = Get.put(HomeController());
+import '../controllers/favorite_controller.dart';
+
+class FavoriteView extends StatelessWidget {
+  final controller = Get.put(FavoriteController());
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
           appBar: AppBar(
-            title: const Text("Ecommerce"),
-            actions: [
-              InkWell(
-                  onTap: () {
-                    Get.to(() => FavoriteView());
-                  },
-                  child: Icon(Icons.favorite, color: Colors.red))
-            ],
+            title: const Text("Favorite"),
           ),
           body: Container(
             color: Colors.grey.shade50,
             child: Column(
               children: [
-                GetBuilder<HomeController>(
-                    init: HomeController(),
-                    builder: (_) => _.loading_categories
-                        ? SizedBox(
-                            height: 50,
-                            child: ListView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _.listCategories.length,
-                              itemBuilder: (context, index) {
-                                return buildCategories(
-                                    index, _.listCategories[index], context);
-                              },
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Center(
-                                child: Container(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            ],
-                          )),
-                GetBuilder<HomeController>(
-                    init: HomeController(),
-                    builder: (_) => SizedBox(
-                          height: 50,
-                          child: ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _.listSections.length,
-                            itemBuilder: (context, index) {
-                              return buildSections(
-                                  index, _.listSections[index], context);
-                            },
-                          ),
-                        )),
                 Expanded(
-                  child: GetBuilder<HomeController>(
-                    init: HomeController(),
+                  child: GetBuilder<FavoriteController>(
                     builder: (_) => NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
                         // if (!_.secend_loading_post &&
@@ -181,13 +134,6 @@ class HomeView extends StatelessWidget {
                               ),
                             ),
                           ],
-                          Container(
-                            height: controller.secend_loading_post ? 50.0 : 0,
-                            color: Colors.transparent,
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -384,87 +330,6 @@ class HomeView extends StatelessWidget {
               ),
             ),
           )),
-    );
-  }
-
-  Widget buildCategories(int index, Category category, context) {
-    return InkWell(
-      onTap: () {
-        controller.selectCategorie(index);
-        // Get.to(() => AddPostView());
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: Column(
-          children: <Widget>[
-            Container(
-              padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
-              height: 40,
-              // width: 100,
-              decoration: BoxDecoration(
-                color: controller.postFilter.categoryId == category.id
-                    ? Colors.blue
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    width: 1, color: Colors.blue.shade300.withOpacity(0.4)),
-              ),
-              child: Center(
-                  child: Text(
-                category.name ?? "",
-                style: TextStyle(
-                    color: controller.postFilter.categoryId == category.id
-                        ? Colors.white
-                        : Colors.black54,
-                    fontSize: 17,
-                    fontWeight: controller.postFilter.categoryId == category.id
-                        ? FontWeight.bold
-                        : FontWeight.w500),
-              )),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildSections(int index, Section section, context) {
-    return InkWell(
-      onTap: () {
-        controller.selectSection(index);
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: Column(
-          children: <Widget>[
-            Container(
-              padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-              height: 40,
-              // width: 100,
-              decoration: BoxDecoration(
-                color: controller.postFilter.sectionId == section.id
-                    ? Colors.blue
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    width: 1, color: Colors.blue.shade300.withOpacity(0.4)),
-              ),
-              child: Center(
-                  child: Text(
-                section.name ?? "",
-                style: TextStyle(
-                    color: controller.postFilter.sectionId == section.id
-                        ? Colors.white
-                        : Colors.black54,
-                    fontSize: 17,
-                    fontWeight: controller.postFilter.sectionId == section.id
-                        ? FontWeight.bold
-                        : FontWeight.w500),
-              )),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

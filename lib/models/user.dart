@@ -40,7 +40,7 @@ class User {
         id: json["id"] == null ? null : json["id"],
         firebaseUid: json["firebaseUID"] == null ? null : json["firebaseUID"],
         name: json["name"] == null ? null : json["name"],
-        tel: json["tel"] == null ? null : json["tel"],
+        tel: json["tel"] == null ? null : json["tel"].toString(),
         type: json["type"],
         status: json["status"] == null ? null : json["status"],
         photo: json["photo"],

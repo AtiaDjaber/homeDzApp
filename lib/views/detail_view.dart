@@ -8,16 +8,18 @@ import 'package:get/get.dart';
 import 'package:home_dz/controllers/detail_controller.dart';
 import 'package:home_dz/models/comment.dart';
 import 'package:home_dz/models/image.dart' as imageModel;
+import 'package:home_dz/models/post.dart';
 import 'package:home_dz/service/HelperService.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class DetailView extends StatelessWidget {
-  final ctrDetail = Get.put(DetailController());
+  final controller = Get.put(DetailController());
   final helperService = Get.find<HelperService>();
   DateTime now = DateTime.now();
 
-  Widget imagesDesc(List<imageModel.Image> images, context) {
+  Widget imagesDesc(Post post, context) {
     return
         // InteractiveViewer(
         //     maxScale: 2,
@@ -29,9 +31,31 @@ class DetailView extends StatelessWidget {
       width: Get.width,
       child: CarouselSlider(
         items: [
-          for (var i = 0; i < images.length; i++) ...[
+          CachedNetworkImage(
+            imageUrl: post.photo!,
+            imageBuilder: (context, imageProvider) => Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.grey.shade50,
+                      offset: const Offset(0.2, 0.2),
+                      blurRadius: 10)
+                ],
+                image: DecorationImage(image: imageProvider, fit: BoxFit.fill),
+              ),
+            ),
+            placeholder: (context, url) => Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                SpinKitDoubleBounce(color: Colors.blue, size: 50)
+              ],
+            ),
+            errorWidget: (context, url, error) => Icon(Icons.error),
+          ),
+          for (var i = 0; i < post.images!.length; i++) ...[
             CachedNetworkImage(
-              imageUrl: images[i].url!,
+              imageUrl: post.images![i].url!,
               imageBuilder: (context, imageProvider) => Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
@@ -117,7 +141,7 @@ class DetailView extends StatelessWidget {
                       // ),
                       Column(
                         children: [
-                          imagesDesc(helperService.post!.images!, context),
+                          imagesDesc(helperService.post!, context),
                         ],
                       ),
 
@@ -151,8 +175,11 @@ class DetailView extends StatelessWidget {
                         child: GetBuilder<DetailController>(
                           builder: (_) => InkWell(
                             onTap: () async {
-                              // _delete(8);
-                              // ctrDetail.insertFavorite(post.id);
+                              if (!controller.isFav) {
+                                controller.addFav(helperService.post!.id!);
+                              } else {
+                                controller.deleteFav(helperService.post!.id!);
+                              }
                             },
                             child: Container(
                               height: 40,
@@ -161,15 +188,17 @@ class DetailView extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color: Colors.black.withOpacity(0.4),
                               ),
-                              child: true
-                                  ? Icon(
-                                      Icons.favorite,
-                                      color: Colors.red,
-                                    )
-                                  : Icon(
-                                      Icons.favorite_border,
-                                      color: Colors.white,
-                                    ),
+                              child: controller.isLoadingFav
+                                  ? CircularProgressIndicator(color: Colors.red)
+                                  : controller.isFav
+                                      ? Icon(
+                                          Icons.favorite,
+                                          color: Colors.red,
+                                        )
+                                      : Icon(
+                                          Icons.favorite_border,
+                                          color: Colors.white,
+                                        ),
                             ),
                           ),
                         ),
@@ -220,10 +249,10 @@ class DetailView extends StatelessWidget {
                               Row(
                                 children: [
                                   Text(
-                                    helperService.post!.title!.length > 25
-                                        ? helperService.post!.title!
+                                    helperService.post!.user!.name!.length > 25
+                                        ? helperService.post!.user!.name!
                                             .substring(0, 24)
-                                        : helperService.post!.title!,
+                                        : helperService.post!.user!.name!,
                                     overflow: TextOverflow.fade,
                                     style:
                                         const TextStyle(color: Colors.black87),
@@ -262,7 +291,7 @@ class DetailView extends StatelessWidget {
                                           .replaceAll("h", "ساعة")
                                           .replaceAll("d", "يوم")
                                           .replaceAll("mo", "شهر"),
-                                      style: TextStyle(color: Colors.black54),
+                                      style: TextStyle(color: Colors.black87),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -310,197 +339,148 @@ class DetailView extends StatelessWidget {
               ),
               const Divider(),
               Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Container(
-                    child: Text(" المزيد من اعلانات العضو : " +
-                        helperService.post!.user!.name!),
-                  )),
-
-              // Obx(
-              //   () => !ctrDetail.loadingPostUser.value
-              //       ? SizedBox(
-              //           height: 100,
-              //           child: Directionality(
-              //             textDirection: TextDirection.rtl,
-              //             child: ListView.builder(
-              //               shrinkWrap: true,
-              //               scrollDirection: Axis.horizontal,
-              //               physics: ClampingScrollPhysics(),
-              //               itemCount: ctrDetail.postsByUserId.length,
-              //               itemBuilder: (context, index) {
-              //                 return Padding(
-              //                   padding: const EdgeInsets.all(8.0),
-              //                   child: InkWell(
-              //                     onTap: () {
-
-              //                     },
-              //                     child: Container(
-              //                       height: 90,
-              //                       width: 90,
-              //                       child: CachedNetworkImage(
-              //                         imageUrl: ctrDetail
-              //                                     .postsByUserId[index].photo !=
-              //                                 ""
-              //                             ? "https://sooqyemen.com/files/image/upload/small/sm_" +
-              //                                 ctrDetail
-              //                                     .postsByUserId[index].photo
-              //                             : "https://sooqyemen.com/files/image/general/empty_image.png",
-              //                         imageBuilder: (context, imageProvider) =>
-              //                             Container(
-              //                           width: 80.0,
-              //                           height: 80.0,
-              //                           decoration: BoxDecoration(
-              //                             color: Colors.grey[100],
-              //                             boxShadow: [
-              //                               BoxShadow(
-              //                                   color: Colors.grey[50],
-              //                                   offset: Offset(0.2, 0.2),
-              //                                   blurRadius: 10)
-              //                             ],
-              //                             borderRadius:
-              //                                 BorderRadius.circular(8.0),
-              //                             image: DecorationImage(
-              //                                 image: imageProvider,
-              //                                 fit: BoxFit.cover),
-              //                           ),
-              //                         ),
-              //                         placeholder: (context, url) => SizedBox(
-              //                           height: 90,
-              //                           width: 90,
-              //                           child: Shimmer.fromColors(
-              //                               enabled: true,
-              //                               child: Container(
-              //                                   height: 90, width: 90),
-              //                               baseColor: Colors.grey[300],
-              //                               highlightColor: Colors.grey[50]),
-              //                         ),
-              //                         errorWidget: (context, url, error) =>
-              //                             Container(
-              //                                 height: 90,
-              //                                 width: 90,
-              //                                 decoration: BoxDecoration(
-              //                                     color: Colors.grey[300],
-              //                                     borderRadius:
-              //                                         BorderRadius.circular(8)),
-              //                                 child: Center(
-              //                                   child: Icon(Icons.error_outline,
-              //                                       color: Colors.white,
-              //                                       size: 35),
-              //                                 )),
-              //                       ),
-              //                     ),
-              //                   ),
-              //                 );
-              //               },
-              //             ),
-              //           ),
-              //         )
-              //       : Container(),
-              // ),
-
+                textDirection: TextDirection.rtl,
+                child: Container(
+                  child: Text(" المزيد من اعلانات العضو : " +
+                      helperService.post!.user!.name!),
+                ),
+              ),
+              GetBuilder<DetailController>(
+                builder: (_) {
+                  return SizedBox(
+                      height: 100,
+                      child: Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          scrollDirection: Axis.horizontal,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: controller.listPostsByUser.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: () {},
+                                  child: Container(
+                                    height: 90,
+                                    width: 90,
+                                    child: CachedNetworkImage(
+                                      imageUrl: controller
+                                          .listPostsByUser[index].photo!,
+                                      imageBuilder: (context, imageProvider) =>
+                                          Container(
+                                        width: 80.0,
+                                        height: 80.0,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: Colors.grey.shade50,
+                                                offset: Offset(0.2, 0.2),
+                                                blurRadius: 10)
+                                          ],
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          image: DecorationImage(
+                                              image: imageProvider,
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      placeholder: (context, url) => SizedBox(
+                                        height: 90,
+                                        width: 90,
+                                        child: Shimmer.fromColors(
+                                          enabled: true,
+                                          child:
+                                              Container(height: 90, width: 90),
+                                          baseColor: Colors.grey.shade300,
+                                          highlightColor: Colors.grey.shade50,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ));
+                          },
+                        ),
+                      ));
+                },
+              ),
               const Divider(),
               Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Container(
-                      child: Text(" المزيد من اعلانات  : " +
-                          helperService.post!.category!.name!))),
-
-              // Obx(
-              //   () => ctrDetail.lodingPostCat.value
-              //       ? SizedBox(
-              //           height: 100,
-              //           child: Directionality(
-              //             textDirection: TextDirection.rtl,
-              //             child: ListView.builder(
-              //               shrinkWrap: true,
-              //               scrollDirection: Axis.horizontal,
-              //               physics: ClampingScrollPhysics(),
-              //               itemCount: ctrDetail.postsByCategoryId.length,
-              //               itemBuilder: (context, index) {
-              //                 return Padding(
-              //                   padding: const EdgeInsets.all(8.0),
-              //                   child: InteractiveViewer(
-              //                     child: InkWell(
-              //                       onTap: () {
-              //
-              //                       },
-              //                       child: Container(
-              //                         height: 90,
-              //                         width: 90,
-              //                         child: CachedNetworkImage(
-              //                           imageUrl: ctrDetail
-              //                                       .postsByCategoryId[index]
-              //                                       .photo !=
-              //                                   ""
-              //                               ? "https://sooqyemen.com/files/image/upload/small/sm_" +
-              //                                   ctrDetail
-              //                                       .postsByCategoryId[index]
-              //                                       .photo
-              //                               : "https://sooqyemen.com/files/image/general/empty_image.png",
-              //                           imageBuilder:
-              //                               (context, imageProvider) =>
-              //                                   Container(
-              //                             width: 80.0,
-              //                             height: 80.0,
-              //                             decoration: BoxDecoration(
-              //                               color: Colors.grey[100],
-              //                               boxShadow: [
-              //                                 BoxShadow(
-              //                                     color: Colors.grey[50],
-              //                                     offset: Offset(0.2, 0.2),
-              //                                     blurRadius: 10)
-              //                               ],
-              //                               borderRadius:
-              //                                   BorderRadius.circular(8.0),
-              //                               image: DecorationImage(
-              //                                   image: imageProvider,
-              //                                   fit: BoxFit.cover),
-              //                             ),
-              //                           ),
-              //                           placeholder: (context, url) => SizedBox(
-              //                             height: 90,
-              //                             width: 90,
-              //                             child: Shimmer.fromColors(
-              //                                 enabled: true,
-              //                                 child: Container(
-              //                                     height: 90, width: 90),
-              //                                 baseColor: Colors.grey[300],
-              //                                 highlightColor: Colors.grey[50]),
-              //                           ),
-              //                           errorWidget: (context, url, error) =>
-              //                               Container(
-              //                                   height: 90,
-              //                                   width: 90,
-              //                                   decoration: BoxDecoration(
-              //                                       color: Colors.grey[300],
-              //                                       borderRadius:
-              //                                           BorderRadius.circular(
-              //                                               8)),
-              //                                   child: Center(
-              //                                     child: Icon(
-              //                                         Icons.error_outline,
-              //                                         color: Colors.white,
-              //                                         size: 35),
-              //                                   )),
-              //                         ),
-              //                       ),
-              //                     ),
-              //                   ),
-              //                 );
-              //               },
-              //             ),
-              //           ),
-              //         )
-              //       : Container(),
-              // ),
-
+                textDirection: TextDirection.rtl,
+                child: Container(
+                    child: Text(" المزيد من اعلانات  : " +
+                        helperService.post!.section!.name!)),
+              ),
+              GetBuilder<DetailController>(
+                builder: (_) {
+                  return SizedBox(
+                      height: 100,
+                      child: Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          scrollDirection: Axis.horizontal,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: controller.listPostsBySection.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: () {
+                                    helperService.post =
+                                        controller.listPostsBySection[index];
+                                  },
+                                  child: Container(
+                                    height: 90,
+                                    width: 90,
+                                    child: CachedNetworkImage(
+                                      imageUrl: controller
+                                          .listPostsBySection[index].photo!,
+                                      imageBuilder: (context, imageProvider) =>
+                                          Container(
+                                        width: 80.0,
+                                        height: 80.0,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: Colors.grey.shade50,
+                                                offset: Offset(0.2, 0.2),
+                                                blurRadius: 10)
+                                          ],
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          image: DecorationImage(
+                                              image: imageProvider,
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      placeholder: (context, url) => SizedBox(
+                                        height: 90,
+                                        width: 90,
+                                        child: Shimmer.fromColors(
+                                          enabled: true,
+                                          child:
+                                              Container(height: 90, width: 90),
+                                          baseColor: Colors.grey.shade300,
+                                          highlightColor: Colors.grey.shade50,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ));
+                          },
+                        ),
+                      ));
+                },
+              ),
               const Divider(),
-
               GetBuilder<DetailController>(
                 builder: (_) => Padding(
                   padding: const EdgeInsets.all(4.0),
                   child: SizedBox(
-                      height: 400,
+                      height: 300,
                       child: Container(
                         color: Colors.grey[200],
                         child: Directionality(
@@ -521,7 +501,7 @@ class DetailView extends StatelessWidget {
                                     Text(
                                       "التعليقات" +
                                           " ( " +
-                                          ctrDetail.countComments +
+                                          controller.countComments +
                                           " ) ",
                                       style: TextStyle(
                                           color: Colors.blue,
@@ -551,7 +531,6 @@ class DetailView extends StatelessWidget {
                       )),
                 ),
               ),
-
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
@@ -559,23 +538,25 @@ class DetailView extends StatelessWidget {
                   bottom: BorderSide(color: Colors.grey.shade50),
                 )),
                 child: TextField(
-                  controller: ctrDetail.textCommentController,
-                  keyboardType: TextInputType.text,
-                  maxLines: 3,
+                  controller: controller.textCommentController,
+                  maxLines: null,
+                  textDirection: TextDirection.rtl,
+                  keyboardType: TextInputType.multiline, // maxLines: null,
+                  // minLines: null,
+                  // expands: true,
                   decoration: InputDecoration(
                       hintText: " اضافة تعليق للمعلن هنا",
                       prefixIcon: const Icon(Icons.comment),
                       hintStyle: TextStyle(color: Colors.grey[400])),
                 ),
               ),
-
               GetBuilder<DetailController>(
-                builder: (_) => !ctrDetail.addCommentLoading
+                builder: (_) => !controller.addCommentLoading
                     ? Padding(
                         padding: const EdgeInsets.all(8),
                         child: MaterialButton(
                           onPressed: () {
-                            ctrDetail.addComment();
+                            controller.addComment();
                           },
                           child: Text(
                             'إرسال التعليق',
@@ -602,7 +583,6 @@ class DetailView extends StatelessWidget {
                           color: Colors.blue,
                         )),
               ),
-
               const SizedBox(height: 100)
             ],
           ),
@@ -628,7 +608,7 @@ class DetailView extends StatelessWidget {
         .replaceAll("mo", " شهر ");
 
     return Padding(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(1),
         child: Container(
           color: Colors.white,
           child: Column(
@@ -643,8 +623,8 @@ class DetailView extends StatelessWidget {
                     Container(
                         child: Row(
                       children: [
-                        const Icon(Icons.person, color: Colors.grey),
-                        const SizedBox(width: 4),
+                        const Icon(Icons.person, color: Colors.grey, size: 20),
+                        const SizedBox(width: 2),
                         Text(
                           comment.user!.name ?? "",
                           style: const TextStyle(fontSize: 16),
@@ -653,9 +633,10 @@ class DetailView extends StatelessWidget {
                     )),
                     Container(
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.timer, color: Colors.grey),
-                          const SizedBox(width: 4),
+                          const Icon(Icons.timer, color: Colors.grey, size: 20),
+                          const SizedBox(width: 2),
                           Text(ago),
                         ],
                       ),
